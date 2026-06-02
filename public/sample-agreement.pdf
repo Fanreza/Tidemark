@@ -1,0 +1,83 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1504 >>
+stream
+BT
+/F1 10 Tf
+72 720 Td
+14 TL
+(TIDEMARK) Tj T*
+() Tj T*
+(SERVICE AGREEMENT) Tj T*
+() Tj T*
+(Date: May 15, 2025) Tj T*
+(Agreement No: TM-2025-001) Tj T*
+() Tj T*
+(PARTIES) Tj T*
+() Tj T*
+(This Service Agreement is entered into between:) Tj T*
+() Tj T*
+(Client: Acme Corporation) Tj T*
+(Address: 123 Business Ave, Jakarta 10110) Tj T*
+(Represented by: John Doe, CEO) Tj T*
+() Tj T*
+(Service Provider: PT Teknologi Maju) Tj T*
+(Address: 456 Tech Park, Surabaya 60271) Tj T*
+(Represented by: Jane Smith, Director) Tj T*
+() Tj T*
+(SCOPE OF WORK) Tj T*
+() Tj T*
+(1. The Service Provider agrees to deliver software) Tj T*
+(   development services as outlined in Schedule A.) Tj T*
+() Tj T*
+(2. Project duration: June 1, 2025 to November 30, 2025.) Tj T*
+() Tj T*
+(3. Total contract value: USD 48,000) Tj T*
+(   Payment terms: Monthly installments of USD 8,000.) Tj T*
+() Tj T*
+(CONFIDENTIALITY) Tj T*
+() Tj T*
+(Both parties agree to keep all project details,) Tj T*
+(technical specifications, and business information) Tj T*
+(strictly confidential for a period of 3 years.) Tj T*
+() Tj T*
+(SIGNATURES) Tj T*
+() Tj T*
+(By signing below, both parties agree to the terms) Tj T*
+(and conditions of this agreement.) Tj T*
+() Tj T*
+(Client:                    Service Provider:) Tj T*
+() Tj T*
+(_____________________      _____________________) Tj T*
+(John Doe                   Jane Smith) Tj T*
+(Acme Corporation           PT Teknologi Maju) Tj T*
+() Tj T*
+(Date: _______________      Date: _______________) Tj T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001797 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1865
+%%EOF
