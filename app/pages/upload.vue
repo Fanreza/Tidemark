@@ -73,8 +73,8 @@
         <Input id="title" v-model="title" placeholder="e.g. NDA Agreement, Acme Corp" />
       </div>
 
-      <!-- Visibility -->
-      <div class="space-y-2">
+      <!-- Visibility — Seal encryption hidden for now (demo). Uploads are public-only. -->
+      <div v-if="false" class="space-y-2">
         <Label class="text-sm">Visibility</Label>
         <div class="grid grid-cols-2 gap-3">
           <button
@@ -410,7 +410,7 @@ async function doWalrusUpload(documentId: string, fileToUpload: File | Blob) {
   uploadDetail.value = 'This may take a minute — safe to wait'
   setProgress(50)
 
-  const params = new URLSearchParams({ owner: address.value ?? '' })
+  const params = new URLSearchParams({ owner: address.value ?? 'demo-wallet' })
   const res = await $fetch<{ blobId: string; objectId: string | null }>(
     `/api/documents/${documentId}/blob?${params}`,
     {

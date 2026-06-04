@@ -1,4 +1,5 @@
 import { SuiJsonRpcClient, getJsonRpcFullnodeUrl } from '@mysten/sui/jsonRpc'
+import { Transaction } from '@mysten/sui/transactions'
 
 let client: SuiJsonRpcClient | null = null
 
@@ -23,25 +24,44 @@ export function useSui() {
     }
   }
 
-  async function recordSignature(params: {
+  /**
+   * Record a signature as a real on-chain Sui transaction and return its digest.
+   *
+   * The transaction is a 1-MIST self-transfer: a genuine, explorable transaction
+   * timestamped by the chain and tied to the signer's address. The returned digest
+   * resolves on Sui explorers (e.g. suiscan.xyz/testnet/tx/<digest>).
+   *
+   * Note: the document hash itself is NOT stored on-chain — that would require a
+   * dedicated Move package. The on-chain record proves *who* signed and *when*;
+   * the document binding lives in Tidemark's records alongside this digest.
+   *
+   * Requires the signer to hold a small amount of network SUI for gas.
+   */
+  async function recordSignature(_params: {
     documentId: string
     signerAddress: string
     documentTitle: string
     walrusBlobId: string
   }): Promise<string> {
-    const { signMessage } = useWallet()
-    const message = [
-      'Tidemark Document Signature',
-      `Document: ${params.documentTitle}`,
-      `ID: ${params.documentId}`,
-      `Blob: ${params.walrusBlobId}`,
-      `Signer: ${params.signerAddress}`,
-      `Time: ${new Date().toISOString()}`,
-    ].join('\n')
+    const { signAndExecuteTransaction, address } = useWallet()
+    const signer = address.value
+    if (!signer) throw new Error('Wallet not connected')
 
-    const sig = await signMessage(message)
-    if (!sig) throw new Error('Wallet did not approve the signature')
-    return sig
+    const tx = new Transaction()
+    const [coin] = tx.splitCoins(tx.gas, [1])
+    tx.transferObjects([coin], signer)
+
+    const digest = await signAndExecuteTransaction(tx)
+    if (!digest) throw new Error('Wallet did not approve the transaction')
+
+    // Wait for finality so the digest is queryable on explorers immediately.
+    try {
+      await getSuiClient().waitForTransaction({ digest })
+    } catch {
+      // Non-fatal: the transaction is submitted; explorer indexing may lag.
+    }
+
+    return digest
   }
 
   async function getObject(objectId: string) {

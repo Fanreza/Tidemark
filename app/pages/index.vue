@@ -278,7 +278,7 @@ const techStack = [
 const faqItems = [
   {
     q: 'Do signers need a crypto wallet?',
-    a: 'Not in the traditional sense. Signers can connect via Google login using zkLogin and get a real Sui address derived from their OAuth token, with no extension to install. Users who already have a Sui wallet can connect that instead.',
+    a: 'Yes — signers connect a Sui wallet (such as Sui Wallet or Slush) to sign. Signing records the signature as a transaction on the Sui blockchain, so signers need a small amount of testnet SUI for gas, available free from the Sui faucet.',
   },
   {
     q: 'Is my document actually permanent?',
@@ -295,10 +295,6 @@ const faqItems = [
   {
     q: 'What happens if Tidemark shuts down?',
     a: 'Your documents remain on decentralized storage and your signatures remain on the blockchain. Both are publicly readable. You do not need Tidemark to prove a document was signed.',
-  },
-  {
-    q: 'Is document content encrypted?',
-    a: 'Public documents are retrievable by anyone with the storage ID. Choose "Private" on upload to encrypt before the file leaves your browser — only your wallet can decrypt it.',
   },
 ]
 

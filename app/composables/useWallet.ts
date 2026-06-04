@@ -1,6 +1,5 @@
 import { getWallets, SUI_MAINNET_CHAIN, SUI_TESTNET_CHAIN, SUI_DEVNET_CHAIN } from '@mysten/wallet-standard'
 import type { Wallet, WalletAccount } from '@mysten/wallet-standard'
-import { isEnokiWallet } from '@mysten/enoki'
 import type { Transaction } from '@mysten/sui/transactions'
 
 const SUI_CHAINS = [SUI_MAINNET_CHAIN, SUI_TESTNET_CHAIN, SUI_DEVNET_CHAIN]
@@ -56,9 +55,7 @@ export function useWallet() {
     return all.filter((w) => {
       if (seen.has(w.name)) return false
       seen.add(w.name)
-      const isSui = w.chains.some(c => SUI_CHAINS.includes(c as any))
-      const isEnoki = isEnokiWallet(w)
-      return isSui || isEnoki
+      return w.chains.some(c => SUI_CHAINS.includes(c as any))
     })
   }
 

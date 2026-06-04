@@ -1,4 +1,4 @@
-import { getShareLinkByToken, hashPassword } from '../../utils/db'
+import { getShareLinkByToken, hashPassword, getDocumentById, assertDocumentOwner } from '../../utils/db'
 import { createClient } from '@supabase/supabase-js'
 
 export default defineEventHandler(async (event) => {
@@ -7,6 +7,10 @@ export default defineEventHandler(async (event) => {
 
   const link = await getShareLinkByToken(token)
   if (!link) throw createError({ statusCode: 404, message: 'Share link not found' })
+
+  const doc = await getDocumentById(link.document_id)
+  if (!doc) throw createError({ statusCode: 404, message: 'Document not found' })
+  assertDocumentOwner(doc, body.wallet)
 
   const config = useRuntimeConfig()
   const client = config.supabaseUrl && config.supabaseServiceKey

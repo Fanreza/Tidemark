@@ -1,4 +1,4 @@
-import { getDocumentById, createShareLink, updateDocumentStatus, generateToken, hashPassword } from '../../../utils/db'
+import { getDocumentById, createShareLink, updateDocumentStatus, generateToken, hashPassword, assertDocumentOwner } from '../../../utils/db'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
@@ -6,6 +6,7 @@ export default defineEventHandler(async (event) => {
 
   const doc = await getDocumentById(id)
   if (!doc) throw createError({ statusCode: 404, message: 'Document not found' })
+  assertDocumentOwner(doc, body.owner_wallet)
 
   const token = generateToken()
 
@@ -19,7 +20,11 @@ export default defineEventHandler(async (event) => {
     is_active: true,
   })
 
-  await updateDocumentStatus(id, 'shared')
+  // Sharing and signing are orthogonal — don't downgrade a doc that's already
+  // collecting signatures or completed back to 'shared'.
+  if (doc.status === 'draft' || doc.status === 'pending') {
+    await updateDocumentStatus(id, 'shared')
+  }
 
   return link
 })

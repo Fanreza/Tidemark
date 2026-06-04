@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { randomUUID, createHash } from 'crypto'
+import { createError } from 'h3'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -59,6 +60,23 @@ export function hashPassword(password: string): string {
 
 export function generateToken(): string {
   return randomUUID().replace(/-/g, '').slice(0, 16)
+}
+
+/**
+ * Ownership guard for mutating endpoints.
+ *
+ * NOTE: identity here is the wallet address the client claims to be. There is no
+ * server-side session, so this is a soft guard against accidental/casual cross-user
+ * actions — it is NOT cryptographically enforced. A production deployment should
+ * require a signed challenge (prove control of the wallet) before trusting this.
+ */
+export function assertDocumentOwner(doc: DbDocument, wallet: unknown): void {
+  if (typeof wallet !== 'string' || !wallet || wallet !== doc.owner_wallet) {
+    throw createError({
+      statusCode: 403,
+      message: 'Not authorized — only the document owner can perform this action',
+    })
+  }
 }
 
 // ─── Supabase client (lazy, server-only) ─────────────────────────────────────

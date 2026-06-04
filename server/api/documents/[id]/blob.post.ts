@@ -1,4 +1,4 @@
-import { getDocumentById, finalizeDocumentUpload } from '../../../utils/db'
+import { getDocumentById, finalizeDocumentUpload, assertDocumentOwner } from '../../../utils/db'
 
 const PUBLISHERS = [
   'https://publisher.walrus-testnet.walrus.space',
@@ -13,6 +13,7 @@ export default defineEventHandler(async (event) => {
 
   const query = getQuery(event)
   const owner = query.owner as string | undefined
+  assertDocumentOwner(doc, owner)
   const epochs = Math.min(Number(query.epochs ?? 50), 50)
 
   const body = await readRawBody(event, false)

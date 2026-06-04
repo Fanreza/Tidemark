@@ -93,12 +93,13 @@ export function useDocuments() {
   }): Promise<ShareLink> {
     return $fetch<ShareLink>(`/api/documents/${documentId}/share`, {
       method: 'POST',
-      body: options,
+      body: { ...options, owner_wallet: address.value ?? 'demo-wallet' },
     })
   }
 
   async function deactivateShareLink(token: string): Promise<void> {
-    await $fetch(`/api/share/${token}` as string, { method: 'DELETE' as any })
+    const wallet = address.value ?? 'demo-wallet'
+    await $fetch(`/api/share/${token}?wallet=${encodeURIComponent(wallet)}` as string, { method: 'DELETE' as any })
   }
 
   async function updateShareLink(token: string, options: {
@@ -106,18 +107,22 @@ export function useDocuments() {
     password?: string
     expires_at?: string
   }): Promise<ShareLink> {
-    return $fetch<ShareLink>(`/api/share/${token}`, { method: 'PATCH' as any, body: options })
+    return $fetch<ShareLink>(`/api/share/${token}`, {
+      method: 'PATCH' as any,
+      body: { ...options, wallet: address.value ?? 'demo-wallet' },
+    })
   }
 
   async function requestSignatures(documentId: string, signerWallets: string[]): Promise<void> {
     await $fetch(`/api/documents/${documentId}/sign`, {
       method: 'POST',
-      body: { signers: signerWallets },
+      body: { signers: signerWallets, owner_wallet: address.value ?? 'demo-wallet' },
     })
   }
 
   async function deleteDocument(id: string): Promise<void> {
-    await $fetch(`/api/documents/${id}`, { method: 'DELETE' as any })
+    const wallet = address.value ?? 'demo-wallet'
+    await $fetch(`/api/documents/${id}?wallet=${encodeURIComponent(wallet)}`, { method: 'DELETE' as any })
     documents.value = documents.value.filter(d => d.id !== id)
   }
 

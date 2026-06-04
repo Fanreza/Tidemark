@@ -63,7 +63,7 @@
             </p>
           </div>
           <div class="shrink-0">
-            <NuxtLink :to="`/sign/${req.id}`">
+            <NuxtLink :to="req.status === 'pending' ? `/sign/${req.id}` : `/document/${req.document_id}`">
               <Button size="sm" :variant="req.status === 'pending' ? 'default' : 'ghost'">
                 {{ req.status === 'pending' ? 'Sign' : 'View' }}
               </Button>
@@ -74,7 +74,7 @@
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="filteredDocs.length === 0" class="text-center py-20 border border-dashed border-border rounded-xl">
+    <div v-else-if="filteredDocs.length === 0 && !(activeTab === 'all' && sharedDocs.length)" class="text-center py-20 border border-dashed border-border rounded-xl">
       <div class="w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-2xl mx-auto mb-4">📄</div>
       <p class="font-medium text-sm mb-1">
         {{ activeTab === 'all' ? 'No documents yet' : `No ${activeTab} documents` }}
@@ -87,8 +87,8 @@
       </NuxtLink>
     </div>
 
-    <!-- Document list -->
-    <div v-else class="divide-y divide-border border border-border rounded-xl overflow-hidden">
+    <!-- Document list (owned by me) -->
+    <div v-else-if="filteredDocs.length" class="divide-y divide-border border border-border rounded-xl overflow-hidden">
       <div
         v-for="doc in filteredDocs"
         :key="doc.id"
@@ -103,7 +103,7 @@
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2">
             <p class="font-medium text-sm truncate">{{ doc.title }}</p>
-            <StatusBadge :status="doc.status" />
+            <StatusBadge :status="effectiveStatus(doc)" />
           </div>
           <div class="flex items-center gap-3 mt-1.5">
             <span class="text-xs text-muted-foreground">{{ formatDate(doc.created_at) }}</span>
@@ -152,6 +152,36 @@
       </div>
     </div>
 
+    <!-- Shared with me to sign (My Documents tab) -->
+    <div v-if="!loading && activeTab === 'all' && sharedDocs.length" class="mt-8">
+      <p class="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Shared with you to sign</p>
+      <div class="divide-y divide-border border border-border rounded-xl overflow-hidden">
+        <div
+          v-for="req in sharedDocs"
+          :key="req.id"
+          class="flex items-center gap-4 px-5 py-4 bg-card hover:bg-muted/20 transition-colors"
+        >
+          <div class="w-9 h-9 rounded-lg bg-muted flex items-center justify-center text-base shrink-0">📄</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <p class="font-medium text-sm truncate">{{ req.document_title }}</p>
+              <StatusBadge :status="req.status" />
+            </div>
+            <p class="text-xs text-muted-foreground mt-1">
+              From {{ displayIdentity(req.owner_username, req.owner_wallet) }}
+            </p>
+          </div>
+          <div class="shrink-0">
+            <NuxtLink :to="req.status === 'pending' ? `/sign/${req.id}` : `/document/${req.document_id}`">
+              <Button size="sm" :variant="req.status === 'pending' ? 'default' : 'outline'">
+                {{ req.status === 'pending' ? 'Sign' : 'View' }}
+              </Button>
+            </NuxtLink>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Delete confirm -->
     <AlertDialog v-if="docToDelete" :open="true">
       <AlertDialogContent>
@@ -190,22 +220,33 @@ const shortAddress = computed(() =>
   address.value ? `${address.value.slice(0, 8)}…${address.value.slice(-6)}` : ''
 )
 
-const activeTab = ref<'all' | 'signing' | 'completed' | 'inbox'>('all')
+const activeTab = ref<'all' | 'inbox'>('all')
 
 const inbox = ref<any[]>([])
 
 const tabs = computed(() => [
   { key: 'all', label: 'My Documents', count: documents.value.length },
-  { key: 'signing', label: 'In Progress', count: documents.value.filter(d => d.status === 'signing').length },
-  { key: 'completed', label: 'Completed', count: documents.value.filter(d => d.status === 'completed').length },
   { key: 'inbox', label: 'Inbox', count: inbox.value.filter(r => r.status === 'pending').length },
 ] as const)
 
-const filteredDocs = computed(() => {
-  if (activeTab.value === 'all') return documents.value
-  if (activeTab.value === 'inbox') return []
-  return documents.value.filter(d => d.status === activeTab.value)
-})
+const filteredDocs = computed(() =>
+  activeTab.value === 'all' ? documents.value : [],
+)
+
+// Display status derived from signatures (a single stored `status` field can't
+// represent both "shared" and "fully signed" at once).
+function effectiveStatus(doc: any): string {
+  const reqs = doc.signing_requests ?? []
+  if (reqs.length && reqs.every((r: any) => r.status === 'signed')) return 'completed'
+  if (reqs.some((r: any) => r.status === 'pending')) return 'signing'
+  return doc.status
+}
+
+// Documents shared with me to sign (owned by someone else). Surfaced inside the
+// "My Documents" tab so signers can access them as documents, not just as inbox items.
+const sharedDocs = computed(() =>
+  inbox.value.filter(r => r.owner_wallet && r.owner_wallet !== address.value),
+)
 
 const docToDelete = ref<Document | null>(null)
 const deleting = ref(false)

@@ -1,4 +1,4 @@
-import { getDocumentById, createSigningRequest, getSigningRequestsByDocument, updateDocumentStatus, updateDocumentBlobId } from '../../../utils/db'
+import { getDocumentById, createSigningRequest, getSigningRequestsByDocument, updateDocumentStatus, updateDocumentBlobId, assertDocumentOwner } from '../../../utils/db'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
@@ -6,6 +6,7 @@ export default defineEventHandler(async (event) => {
 
   const doc = await getDocumentById(id)
   if (!doc) throw createError({ statusCode: 404, message: 'Document not found' })
+  assertDocumentOwner(doc, body.owner_wallet)
 
   if (body.signed_blob_id) {
     await updateDocumentBlobId(id, body.signed_blob_id)

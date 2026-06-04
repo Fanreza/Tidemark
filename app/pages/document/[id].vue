@@ -32,11 +32,16 @@
           </NuxtLink>
           <h1 class="text-2xl font-serif font-medium leading-snug">{{ doc.title }}</h1>
           <div class="flex items-center gap-2.5 flex-wrap">
-            <span :class="['text-xs px-2.5 py-1 rounded-full font-medium', getStatusColor(doc.status)]">
-              {{ doc.status }}
+            <span :class="['text-xs px-2.5 py-1 rounded-full font-medium', getStatusColor(effectiveStatus)]">
+              {{ effectiveStatus }}
             </span>
             <span class="text-xs text-muted-foreground">Uploaded {{ formatDate(doc.created_at) }}</span>
             <span class="text-xs text-muted-foreground px-2 py-0.5 rounded border border-border bg-muted/40">Decentralized</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-muted-foreground">Document ID</span>
+            <code class="text-xs font-mono text-muted-foreground truncate max-w-xs">{{ doc.id }}</code>
+            <button class="text-xs text-primary hover:underline shrink-0" @click="copyDocId">Copy</button>
           </div>
         </div>
 
@@ -84,8 +89,8 @@
           </svg>
           Loading document...
         </div>
-        <!-- Encrypted: needs wallet to decrypt -->
-        <div v-else-if="doc.is_encrypted && !previewUrl" class="flex flex-col items-center justify-center py-16 gap-4 text-center px-6">
+        <!-- Encrypted: needs wallet to decrypt (Seal hidden for now — demo) -->
+        <div v-else-if="false && doc.is_encrypted && !previewUrl" class="flex flex-col items-center justify-center py-16 gap-4 text-center px-6">
           <p class="text-sm font-medium">End-to-end encrypted</p>
           <p class="text-xs text-muted-foreground max-w-sm">
             This document is end-to-end encrypted. Sign with your wallet to decrypt and preview it.
@@ -175,8 +180,8 @@
           </button>
         </div>
 
-        <!-- SHARE TAB -->
-        <div v-show="activeTab === 'share'" class="mt-6">
+        <!-- SHARE TAB (owner only) -->
+        <div v-if="isOwner" v-show="activeTab === 'share'" class="mt-6">
           <div class="max-w-xl space-y-1">
 
             <p class="text-sm font-medium mb-4">Share "{{ doc.title }}"</p>
@@ -284,8 +289,9 @@
         <!-- SIGN TAB -->
         <div v-show="activeTab === 'sign'" class="mt-6 space-y-6">
 
-          <!-- Owner signature card -->
+          <!-- Owner signature card (owner only) -->
           <div
+            v-if="isOwner"
             class="border rounded-xl p-5"
             :class="ownerSigned ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10' : 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10'"
           >
@@ -345,9 +351,9 @@
             </div>
           </div>
 
-          <div class="grid md:grid-cols-[360px_1fr] gap-6 items-start">
+          <div :class="isOwner ? 'grid md:grid-cols-[360px_1fr] gap-6 items-start' : ''">
 
-            <div class="border border-border rounded-xl p-6 space-y-5">
+            <div v-if="isOwner" class="border border-border rounded-xl p-6 space-y-5">
               <div>
                 <h2 class="font-medium text-sm">Request signatures</h2>
                 <p class="text-xs text-muted-foreground mt-1">Each signature is recorded permanently on the blockchain and is publicly verifiable.</p>
@@ -435,7 +441,7 @@
                   <div class="min-w-0">
                     <div class="flex items-center gap-1.5">
                       <p class="text-sm font-medium truncate">
-                        {{ req.order_index === -1 ? 'You (owner)' : displayIdentity(req.signer_username, req.signer_wallet) }}
+                        {{ req.order_index === -1 ? (isOwner ? 'You (owner)' : 'Owner') : displayIdentity(req.signer_username, req.signer_wallet) }}
                       </p>
                       <span v-if="req.order_index === -1" class="text-xs text-muted-foreground">(owner)</span>
                     </div>
@@ -562,11 +568,18 @@ const { fetchDocument, createShareLink, deactivateShareLink, updateShareLink, re
 const { recordSignature } = useSui()
 const { embedDrawnSignature } = usePdfSigner()
 
-const tabs = [
-  { value: 'share', label: 'Share' },
-  { value: 'sign', label: 'Signatures' },
-  { value: 'audit', label: 'Audit Trail' },
-]
+const tabs = computed(() =>
+  isOwner.value
+    ? [
+        { value: 'share', label: 'Share' },
+        { value: 'sign', label: 'Signatures' },
+        { value: 'audit', label: 'Audit Trail' },
+      ]
+    : [
+        { value: 'sign', label: 'Signatures' },
+        { value: 'audit', label: 'Audit Trail' },
+      ],
+)
 const activeTab = ref((route.query.tab as string) || 'share')
 
 
@@ -580,6 +593,16 @@ const creatingLink = ref(false)
 const sendingRequests = ref(false)
 const deactivating = ref<string | null>(null)
 const doc = ref<any>(null)
+const isOwner = computed(() =>
+  !!doc.value && !!address.value &&
+  doc.value.owner_wallet?.toLowerCase() === address.value.toLowerCase(),
+)
+const effectiveStatus = computed(() => {
+  const reqs = doc.value?.signing_requests ?? []
+  if (reqs.length && reqs.every((r: any) => r.status === 'signed')) return 'completed'
+  if (reqs.some((r: any) => r.status === 'pending')) return 'signing'
+  return doc.value?.status ?? ''
+})
 interface UserResult { wallet_address: string; username: string }
 const selectedSigners = ref<UserResult[]>([])
 const signerSearch = ref('')
@@ -693,6 +716,12 @@ function shareUrl(token: string): string {
 async function copyLink(token: string) {
   await navigator.clipboard.writeText(shareUrl(token))
   toast.success('Link copied to clipboard')
+}
+
+async function copyDocId() {
+  if (!doc.value) return
+  await navigator.clipboard.writeText(doc.value.id)
+  toast.success('Document ID copied — paste it on the Verify page')
 }
 
 async function copySignLink(requestId: string) {
@@ -833,7 +862,7 @@ async function signAsOwner(signatureDataUrl: string) {
 
     await $fetch(`/api/documents/${doc.value.id}/owner-sign`, {
       method: 'POST',
-      body: { sui_tx_hash: hash, signed_blob_id: signedBlobId },
+      body: { sui_tx_hash: hash, signed_blob_id: signedBlobId, owner_wallet: address.value ?? 'demo-wallet' },
     })
     ownerPlacedField.value = null
     await reload()
@@ -921,6 +950,8 @@ async function decryptAndPreview() {
 onMounted(async () => {
   try {
     await reload()
+    // Signers (non-owners) can't use the Share tab — land them on Signatures.
+    if (!isOwner.value && activeTab.value === 'share') activeTab.value = 'sign'
     loadPreview()
   } catch {
     doc.value = null

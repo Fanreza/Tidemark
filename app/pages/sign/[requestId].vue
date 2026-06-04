@@ -29,6 +29,13 @@
         </div>
         <h2 class="font-semibold text-lg mb-2">Already Signed</h2>
         <p class="text-sm text-muted-foreground">You've already signed this document. Thank you.</p>
+        <NuxtLink
+          v-if="signingRequest?.document_id"
+          :to="`/document/${signingRequest.document_id}`"
+          class="inline-block mt-4"
+        >
+          <Button variant="outline" size="sm">View document</Button>
+        </NuxtLink>
       </div>
 
       <!-- Declined -->
@@ -59,6 +66,11 @@
         >
           View on blockchain ↗
         </a>
+        <div v-if="signingRequest?.document_id" class="mt-4">
+          <NuxtLink :to="`/document/${signingRequest.document_id}`" class="inline-block">
+            <Button variant="outline" size="sm">View document</Button>
+          </NuxtLink>
+        </div>
       </div>
 
       <!-- Sign form -->

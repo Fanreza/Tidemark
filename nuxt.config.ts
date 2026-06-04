@@ -40,8 +40,6 @@ export default defineNuxtConfig({
     supabaseUrl: '',
     supabaseServiceKey: '',
     public: {
-      enokiApiKey: '',
-      googleClientId: '',
       walrusPublisher: 'https://publisher.walrus-testnet.walrus.space',
       walrusAggregator: 'https://aggregator.walrus-testnet.walrus.space',
       suiNetwork: 'testnet',

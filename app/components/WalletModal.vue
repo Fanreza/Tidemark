@@ -85,7 +85,6 @@
 
 <script setup lang="ts">
 import type { Wallet } from '@mysten/wallet-standard'
-import { isEnokiWallet } from '@mysten/enoki'
 import {
   Dialog,
   DialogContent,
@@ -107,12 +106,8 @@ onMounted(() => {
   wallets.value = getAvailableWallets().map(w => markRaw(w))
 })
 
-function walletSubtitle(wallet: Wallet): string {
-  try {
-    return isEnokiWallet(wallet) ? 'Social login via zkLogin' : 'Browser extension'
-  } catch {
-    return 'Browser extension'
-  }
+function walletSubtitle(_wallet: Wallet): string {
+  return 'Browser extension'
 }
 
 async function connect(wallet: Wallet) {

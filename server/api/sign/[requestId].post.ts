@@ -16,6 +16,12 @@ export default defineEventHandler(async (event) => {
     return updated
   }
 
+  // Only the assigned signer may sign. Compare case-insensitively to match the
+  // client's authorization check. (Soft guard — identity is the claimed wallet.)
+  if (req.signer_wallet && (body.signer_wallet ?? '').toLowerCase() !== req.signer_wallet.toLowerCase()) {
+    throw createError({ statusCode: 403, message: 'Not authorized — wrong wallet for this signing request' })
+  }
+
   const updated = await updateSigningRequest(requestId, {
     status: 'signed',
     signed_at: new Date().toISOString(),
