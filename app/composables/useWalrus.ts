@@ -8,8 +8,9 @@ export function useWalrus() {
 
   async function makeClients() {
     const { WalrusClient } = await import('@mysten/walrus')
-    const { SuiJsonRpcClient, getJsonRpcFullnodeUrl } = await import('@mysten/sui/jsonRpc')
-    const suiClient = new SuiJsonRpcClient({ url: getJsonRpcFullnodeUrl('testnet'), network: 'testnet' } as any)
+    const { SuiJsonRpcClient } = await import('@mysten/sui/jsonRpc')
+    // Primary RPC → /api/rpc proxy → Tatum RPC gateway.
+    const suiClient = new SuiJsonRpcClient({ url: useSuiRpcUrl(), network: 'testnet' } as any)
     const walrusClient = new WalrusClient({ network: 'testnet', suiClient: suiClient as any })
     return { suiClient, walrusClient }
   }

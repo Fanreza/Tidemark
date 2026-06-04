@@ -26,7 +26,7 @@ holds the master copy, and no company can delete it.
 | Blockchain       | Sui (`@mysten/sui`, `@mysten/wallet-standard`)      |
 | Storage          | Walrus (`@mysten/walrus`)                           |
 | Encryption       | Seal (`@mysten/seal`)                               |
-| RPC / verify     | Tatum Sui RPC Gateway (`sui-testnet.gateway.tatum.io`) |
+| RPC              | Tatum Sui RPC Gateway — primary Sui RPC, proxied server-side at `/api/rpc` |
 | Database         | Supabase (Postgres) — in-memory fallback if unset   |
 | PDF              | pdf-lib (sign), vue-pdf-embed (preview)             |
 
@@ -58,7 +58,7 @@ All config is read through Nuxt `runtimeConfig` (see [nuxt.config.ts](nuxt.confi
 | `NUXT_PUBLIC_SUI_NETWORK`       | No       | `testnet` (default) \| `mainnet` \| `devnet`.                               |
 | `NUXT_PUBLIC_WALRUS_PUBLISHER`  | No       | Walrus publisher endpoint. Defaults to the public testnet publisher.        |
 | `NUXT_PUBLIC_WALRUS_AGGREGATOR` | No       | Walrus aggregator endpoint. Defaults to the public testnet aggregator.      |
-| `NUXT_TATUM_API_KEY`            | No       | Server-side Tatum API key. Used to confirm signatures on-chain via Tatum's Sui RPC gateway on the Verify page. If unset, the "verified via Tatum" badge is skipped. |
+| `NUXT_TATUM_API_KEY`            | No       | Server-side Tatum API key. **All Sui RPC** for the app is proxied through Tatum's gateway via `/api/rpc`. If unset, the proxy falls back to the public Sui fullnode (and the on-chain verify badge is skipped). |
 
 \* Both Supabase variables must be set together; otherwise the app runs on the
 in-memory fallback (great for local demos, not for production).

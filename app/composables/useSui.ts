@@ -1,11 +1,12 @@
-import { SuiJsonRpcClient, getJsonRpcFullnodeUrl } from '@mysten/sui/jsonRpc'
+import { SuiJsonRpcClient } from '@mysten/sui/jsonRpc'
 import { Transaction } from '@mysten/sui/transactions'
 
 let client: SuiJsonRpcClient | null = null
 
 function getSuiClient(): SuiJsonRpcClient {
   if (!client) {
-    client = new SuiJsonRpcClient({ url: getJsonRpcFullnodeUrl('testnet'), network: 'testnet' })
+    // Primary RPC → /api/rpc proxy → Tatum RPC gateway.
+    client = new SuiJsonRpcClient({ url: useSuiRpcUrl(), network: 'testnet' })
   }
   return client
 }
