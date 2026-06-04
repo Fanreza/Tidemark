@@ -9,7 +9,8 @@ export default defineEventHandler(async (event) => {
   const apiKey = config.tatumApiKey as string
   const net = (config.public.suiNetwork as string) || 'testnet'
 
-  const target = apiKey
+  const usingTatum = !!apiKey
+  const target = usingTatum
     ? `https://sui-${net}.gateway.tatum.io`
     : `https://fullnode.${net}.sui.io:443`
 
@@ -19,7 +20,7 @@ export default defineEventHandler(async (event) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(apiKey ? { 'x-api-key': apiKey } : {}),
+      ...(usingTatum ? { 'x-api-key': apiKey } : {}),
     },
     body: body ?? '',
   })
@@ -27,5 +28,8 @@ export default defineEventHandler(async (event) => {
   const text = await res.text()
   setResponseStatus(event, res.status)
   setResponseHeader(event, 'Content-Type', 'application/json')
+  // Verifiable proof of which upstream served this RPC call.
+  setResponseHeader(event, 'x-rpc-provider', usingTatum ? 'tatum' : 'sui-fullnode-fallback')
+  setResponseHeader(event, 'x-rpc-upstream', target)
   return text
 })
