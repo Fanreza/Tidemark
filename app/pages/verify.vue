@@ -143,6 +143,14 @@
               >
                 {{ req.sui_tx_hash.slice(0, 12) }}… ↗
               </a>
+              <p
+                v-if="req.sui_tx_hash && txChecks[req.sui_tx_hash]?.found"
+                class="text-[11px] text-green-600 dark:text-green-400 mt-0.5 flex items-center gap-1 justify-end"
+                title="Transaction confirmed on the Sui chain via Tatum RPC"
+              >
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                On-chain · verified via Tatum
+              </p>
             </div>
           </div>
         </div>
@@ -175,6 +183,8 @@ const query = ref('')
 const verifying = ref(false)
 const notFound = ref(false)
 const result = ref<any>(null)
+// On-chain verification results keyed by tx digest (powered by Tatum RPC).
+const txChecks = ref<Record<string, any>>({})
 
 async function verify() {
   const id = query.value.trim()
@@ -183,15 +193,31 @@ async function verify() {
   verifying.value = true
   notFound.value = false
   result.value = null
+  txChecks.value = {}
 
   try {
     const data = await $fetch<any>(`/api/documents/${id}`)
     result.value = data
+    verifyOnChain()
   } catch {
     notFound.value = true
   } finally {
     verifying.value = false
   }
+}
+
+// Confirm each signed request's transaction on the Sui chain through Tatum's RPC gateway.
+async function verifyOnChain() {
+  const reqs = (result.value?.signing_requests ?? []).filter(
+    (r: any) => r.status === 'signed' && r.sui_tx_hash,
+  )
+  await Promise.all(reqs.map(async (r: any) => {
+    try {
+      txChecks.value[r.sui_tx_hash] = await $fetch(`/api/tx/${r.sui_tx_hash}`)
+    } catch {
+      txChecks.value[r.sui_tx_hash] = { found: false }
+    }
+  }))
 }
 
 function formatDate(iso: string): string {
