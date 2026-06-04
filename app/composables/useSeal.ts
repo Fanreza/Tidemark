@@ -1,5 +1,5 @@
 import { SealClient, SessionKey } from '@mysten/seal'
-import { SuiGrpcClient } from '@mysten/sui/grpc'
+import { SuiJsonRpcClient } from '@mysten/sui/jsonRpc'
 import { Transaction } from '@mysten/sui/transactions'
 import { fromHex, toHex } from '@mysten/bcs'
 
@@ -7,12 +7,13 @@ const SEAL_PACKAGE_ID = '0xc5ce2742cac46421b62028557f1d7aea8a4c50f651379a79afdf1
 const KEY_SERVER_OBJ_ID = '0xb012378c9f3799fb5b1a7083da74a4069e3c3f1c93de0b27212a5799ce1e1e98'
 const SEAL_AGGREGATOR = 'https://seal-aggregator-testnet.mystenlabs.com'
 
-let _suiClient: SuiGrpcClient | null = null
+let _suiClient: SuiJsonRpcClient | null = null
 let _sealClient: SealClient | null = null
 
-function getSuiClient(): SuiGrpcClient {
+function getSuiClient(): SuiJsonRpcClient {
   if (!_suiClient) {
-    _suiClient = new SuiGrpcClient({ network: 'testnet', baseUrl: 'https://fullnode.testnet.sui.io:443' })
+    // Primary RPC → /api/rpc proxy → Tatum RPC gateway.
+    _suiClient = new SuiJsonRpcClient({ url: useSuiRpcUrl(), network: 'testnet' })
   }
   return _suiClient
 }
@@ -49,22 +50,20 @@ export function useSeal() {
     const digest = await signAndExecuteTransaction(tx)
     console.log('[Seal] createAllowlist: tx digest', digest)
 
-    const result = await getSuiClient().waitForTransaction({
+    const result: any = await getSuiClient().waitForTransaction({
       digest,
-      include: { objectTypes: true },
+      options: { showObjectChanges: true },
     })
     console.log('[Seal] createAllowlist: waitForTransaction result', JSON.stringify(result))
 
-    const txData = (result as any).Transaction ?? (result as any)
-    const objectTypes: Record<string, string> = txData.objectTypes ?? {}
-    console.log('[Seal] createAllowlist: objectTypes', objectTypes)
-    const entry = Object.entries(objectTypes).find(
-      ([, type]) => (type as string).includes('::allowlist::Allowlist'),
+    const changes: any[] = result.objectChanges ?? []
+    const created = changes.find(
+      (c) => c.type === 'created' && typeof c.objectType === 'string' && c.objectType.includes('::allowlist::Allowlist'),
     )
 
-    if (!entry) throw new Error('Allowlist object not found in transaction result')
-    console.log('[Seal] createAllowlist: allowlist object ID', entry[0])
-    return entry[0]
+    if (!created) throw new Error('Allowlist object not found in transaction result')
+    console.log('[Seal] createAllowlist: allowlist object ID', created.objectId)
+    return created.objectId
   }
 
   async function encryptFile(file: File | Blob, allowlistId: string): Promise<{ encryptedBytes: Uint8Array; encryptionId: string }> {
